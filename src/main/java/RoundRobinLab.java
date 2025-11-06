@@ -20,36 +20,69 @@ public class RoundRobinLab {
     }
 
     
-    public static void scheduleRoundRobin(List<Process> processes, int timeQuantum) {
+    public static void scheduleRoundRobin(List<Process> processes, int timeQuantum) 
+    {
+        processes.sort(Comparator.comparingInt(p -> p.arrivalTime));
+        Queue<Process> readyQueue = new LinkedList<>(); 
         int currentTime = 0;
+        int processIndex = 0; 
+        int completedProcesses = 0;
 
-       Queue<Process> readyQueue = new LinkedList<>(processes);
-
-       readyQueue.addAll(processes);
-
-       while(!readyQueue.isEmpty())
-       {
-        Process currentProcess = readyQueue.poll();
-
-        int execTime = Math.min(timeQuantum, currentProcess.remainingTime);
-        currentTime += execTime;
-        currentProcess.remainingTime -= execTime;
-
-        if(currentProcess.remainingTime == 0)
+    
+        while (completedProcesses < processes.size()) 
         {
-            currentProcess.completionTime = currentTime;
-        }
-        else
-        {
-            readyQueue.add(currentProcess);
-        }
+            
+            
+            while (processIndex < processes.size() && processes.get(processIndex).arrivalTime <= currentTime) 
+            {
+                readyQueue.add(processes.get(processIndex));
+                processIndex++;
+            }
 
-        for (Process p : processes)
-        {
-            p.turnaroundTime = p.completionTime - p.arrivalTime;
-            p.waitingTime = p.turnaroundTime - p.burstTime;
+            
+            if (!readyQueue.isEmpty()) 
+            {
+                Process currentProcess = readyQueue.poll();
+                int execTime = Math.min(timeQuantum, currentProcess.remainingTime);
+                currentTime += execTime;
+                currentProcess.remainingTime -= execTime;
+
+                
+                if (currentProcess.remainingTime == 0) 
+                {
+                    currentProcess.completionTime = currentTime;
+                    currentProcess.turnaroundTime = currentProcess.completionTime - currentProcess.arrivalTime;
+                    currentProcess.waitingTime = currentProcess.turnaroundTime - currentProcess.burstTime;
+                    completedProcesses++;
+                }
+                
+            
+                while (processIndex < processes.size() && processes.get(processIndex).arrivalTime <= currentTime) 
+                {
+                    readyQueue.add(processes.get(processIndex));
+                    processIndex++;
+                }
+
+                
+                if (currentProcess.remainingTime > 0) 
+                {
+                    readyQueue.add(currentProcess);
+                }
+
+            } 
+            else 
+            {
+               
+                if (processIndex < processes.size()) 
+                {
+                    currentTime = processes.get(processIndex).arrivalTime;
+                } 
+                else 
+                {
+                    break; 
+                }
+            }
         }
-       }
     }
 
     /**
